@@ -1,0 +1,14 @@
+.news-preview-content {
+  color: inherit;
+  background-color: inherit;
+}
+
+.news-preview-content.dark {
+  background-color: #2d2d2d;
+  color: #f5f5f5;
+}
+
+.news-preview-content.dark * {
+  color: inherit !important;
+}
+

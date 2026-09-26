@@ -1,0 +1,51 @@
+.sider-container {
+  min-height: 100vh; /* 跟随外层 Layout 高度，不强制锁死视口 */
+}
+
+.sider-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100%;
+}
+
+.demo-logo-vertical {
+  height: 32px;
+  line-height: 32px;
+  color: #f0f0f0;
+  margin: 16px 10px; /* 上下 16px，与右侧 Content 的 margin:16px 对齐 */
+  text-align: center;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+/* 收起时用占位保持高度，菜单不会上下跳动、与右侧对齐 */
+.demo-logo-vertical--placeholder {
+  background: transparent;
+  color: transparent;
+  user-select: none;
+}
+
+/* 菜单滚动容器 */
+.menu-scroll-container {
+  flex: 1; /* 占据剩余空间 */
+  overflow-y: auto; /* 仅垂直方向滚动 */
+  overflow-x: hidden; /* 隐藏水平滚动条 */
+}
+
+/* 美化滚动条（可选） */
+.menu-scroll-container::-webkit-scrollbar {
+  width: 6px; /* 滚动条宽度 */
+}
+
+.menu-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #555; /* 滚动条颜色 */
+  border-radius: 3px; /* 滚动条圆角 */
+}
+
+.menu-scroll-container::-webkit-scrollbar-track {
+  background-color: #222; /* 滚动条轨道颜色 */
+}

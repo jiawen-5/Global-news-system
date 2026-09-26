@@ -7,5 +7,4 @@ backend/node_modules/
 backend/.env
 
 # 其它
-.DS_Store
-.env
+.DS_Store.env
