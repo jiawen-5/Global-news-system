@@ -125,13 +125,6 @@ export default function NewsDraft() {
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      render:(id) => {
-        return <b>{id}</b>
-      },
-    },
-    {
       title: '新闻标题',
       dataIndex: 'title',
       render:(title,item)=>{
@@ -146,7 +139,8 @@ export default function NewsDraft() {
       title: '新闻分类',
       dataIndex: 'categoryId',
       render:(value, record) => {
-        return <div>{record.category?.title || value}</div>
+        const categoryList = ['','时事新闻','环球经济','科学科技','军事世界','世界体育','生活理财']
+        return <div>{categoryList[value] || value}</div>
       }
     },
     {

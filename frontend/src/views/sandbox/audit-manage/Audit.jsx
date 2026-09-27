@@ -99,7 +99,7 @@ export default function Audit() {
       title: '新闻分类',
       dataIndex: 'categoryId',
       render:(value) => {
-        const categoryList = ['时事新闻','环球经济','科学科技','军事世界','世界体育','生活理财']
+        const categoryList = ['','时事新闻','环球经济','科学科技','军事世界','世界体育','生活理财']
         return <div>{categoryList[value] || '-'}</div>
       }
     },
@@ -107,7 +107,7 @@ export default function Audit() {
       title: '操作',
       render:(item) => {
         return <div>
-          <Button type='primary' onClick={()=>handleAudit(item,2,1)}>通过</Button> 
+          <Button type='primary' onClick={()=>handleAudit(item,2,1)} style={{marginRight:10}}>通过</Button> 
           <Button danger onClick={()=>handleAudit(item,3,0)}>驳回</Button> 
         </div>
       }

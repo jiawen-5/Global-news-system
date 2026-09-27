@@ -5,22 +5,18 @@ const getBaseURL = () => {
   return "/api";
 };
 
-const request = axios.create({ baseURL: getBaseURL(), timeout: 10000 });
-
-request.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+// 凭证走 HttpOnly Cookie，前端拿不到也不需要 token
+const request = axios.create({
+  baseURL: getBaseURL(),
+  timeout: 10000,
+  withCredentials: true,
 });
 
 request.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err?.response?.status === 401 && !location.pathname.includes("/login")) {
-      localStorage.removeItem("token");
+      // Cookie 已失效（过期/被清），清掉本地展示用的用户缓存并回登录页
       localStorage.removeItem("user");
       location.href = "/login";
     }

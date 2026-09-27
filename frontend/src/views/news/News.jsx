@@ -12,7 +12,8 @@ export default function News() {
         // 后端可能返回 { total, list } 或数组格式
         const data = Array.isArray(res.data) ? res.data : (res.data?.list || [])
         // console.log(Object.entries(_.groupBy(data,item=>item.category?.title || item.categoryId)));
-        setList(Object.entries(_.groupBy(data,item=>item.category?.title || item.categoryId)))
+        const categoryList = ['','时事新闻','环球经济','科学科技','军事世界','世界体育','生活理财']
+        setList(Object.entries(_.groupBy(data,item=>categoryList[item.categoryId])))
       })
       .catch(err => {
         console.error('获取新闻列表失败:', err)

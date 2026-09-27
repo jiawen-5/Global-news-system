@@ -7,3 +7,4 @@ pydantic==2.*
 pydantic-settings==2.*
 python-dotenv==1.*
 bcrypt==4.*
+bleach==6.*

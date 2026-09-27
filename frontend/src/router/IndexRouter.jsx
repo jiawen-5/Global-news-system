@@ -41,7 +41,6 @@ function AppRoutes() {
       })
       .catch(() => {
         clearMeCache();
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
         setIsLogin(false);
       })

@@ -6,6 +6,7 @@ import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim"; 
 import './Login.css'
 import request from '@/util/request.js';
+import { clearMeCache } from '@/util/getRoutes.js';
 
 export default function Login() {
   const [init, setInit] = useState(false);
@@ -113,18 +114,19 @@ export default function Login() {
         password: values.password
       });
       
-      if (res.data.token) {
-        // 存储 JWT token
-        localStorage.setItem('token', res.data.token);
-        // 存储用户信息（包含角色信息），顺带存菜单/权限供路由和侧边栏首屏使用
+      // JWT 由后端写入 HttpOnly Cookie，响应体里不再返回 token
+      if (res.data?.user) {
+        // 只缓存展示用的用户信息（用户名/角色/菜单），这些不是凭证
         localStorage.setItem('user', JSON.stringify({
           ...res.data.user,
           menus: res.data.menus || [],
           keys: res.data.keys || [],
         }));
-        
+        // 清掉上一次会话可能残留的 /auth/me 缓存，保证拉到当前用户的菜单
+        clearMeCache();
+
         message.success('登录成功');
-        
+
         // 如果是从其他页面跳转过来的，返回原页面，否则跳转到首页
         const from = location.state?.from?.pathname || '/home';
         navigate(from, { replace: true });

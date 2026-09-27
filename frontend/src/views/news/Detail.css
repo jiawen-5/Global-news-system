@@ -1,0 +1,52 @@
+/* 访客详情页 —— 页面级样式，正文排版见 src/styles/news-article.css */
+
+.detail-page {
+  min-height: 100vh;
+  padding: 32px 16px 64px;
+  background: #f5f7fa;
+  box-sizing: border-box;
+}
+
+/* 返回入口 */
+.detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #8a919f;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.detail-back:hover {
+  color: #1890ff;
+}
+
+/* 加载 / 错误态 */
+.detail-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+/* 窄屏适配 */@media (max-width: 720px) {
+  .detail-page {
+    padding: 16px 10px 40px;
+  }
+
+  .article-card {
+    padding: 24px 20px 32px;
+    border-radius: 10px;
+  }
+
+  .article-title {
+    font-size: 22px;
+  }
+
+  .article-content {
+    font-size: 15px;
+    line-height: 1.8;
+  }
+}

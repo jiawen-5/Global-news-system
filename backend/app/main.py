@@ -1,5 +1,5 @@
 import os, time, uuid, jwt, bcrypt
-from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi import FastAPI, Depends, HTTPException, Header, Response, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -7,24 +7,44 @@ from dotenv import load_dotenv
 from app.db import Base, engine, get_db
 from app import models
 from app.rbac import get_role_permission_keys, get_user_menus, build_menu_tree
+from app.sanitize import sanitize_html, sanitize_text
 
 load_dotenv()
 SECRET = os.getenv("JWT_SECRET", "news-secret")
 
+COOKIE_NAME = "news_token"
+COOKIE_MAX_AGE = 86400  # 与 JWT 有效期保持一致
+# 生产环境走 HTTPS 时必须开启，未开启浏览器不会在 http 下发送 cookie
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+CORS_ORIGINS = [o.strip() for o in os.getenv(
+    "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip()]
+
 app = FastAPI(title="news-system-python")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
+# 凭证改为 Cookie 后不能再配 allow_origins=["*"]（浏览器会拒绝携带凭证的跨域请求）
+app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 Base.metadata.create_all(bind=engine)
 
 def mk_token(u):
     return jwt.encode({"sub": u.id, "username": u.username, "roleId": u.roleId,
-                       "region": u.region, "exp": int(time.time()) + 86400}, SECRET, algorithm="HS256")
+                       "region": u.region, "exp": int(time.time()) + COOKIE_MAX_AGE}, SECRET, algorithm="HS256")
 
-def cur_user(authorization: str = Header(None), db: Session = Depends(get_db)):
-    if not authorization:
+def set_auth_cookie(resp: Response, token: str):
+    # httponly 让 JS 读不到，XSS 无法窃取凭证；samesite=lax 兼顾防 CSRF 与正常跳转
+    resp.set_cookie(key=COOKIE_NAME, value=token, httponly=True, samesite="lax",
+                    secure=COOKIE_SECURE, max_age=COOKIE_MAX_AGE, path="/")
+
+def clear_auth_cookie(resp: Response):
+    resp.delete_cookie(key=COOKIE_NAME, path="/", samesite="lax", secure=COOKIE_SECURE)
+
+def cur_user(authorization: str = Header(None), news_token: str = Cookie(None),
+             db: Session = Depends(get_db)):
+    # 优先读 HttpOnly Cookie；保留 Authorization 头以兼容旧客户端/移动端
+    tok = news_token or (authorization.replace("Bearer ", "") if authorization else None)
+    if not tok:
         raise HTTPException(401, "missing token")
     try:
-        d = jwt.decode(authorization.replace("Bearer ", ""), SECRET, algorithms=["HS256"])
+        d = jwt.decode(tok, SECRET, algorithms=["HS256"])
     except Exception:
         raise HTTPException(401, "invalid token")
     u = db.query(models.User).filter(models.User.id == d["sub"]).first()
@@ -42,13 +62,13 @@ def need(key):
 
 def me_data(db, u):
     r = db.query(models.Role).filter(models.Role.id == u.roleId).first()
-    return {"token": None, "user": {"id": u.id, "username": u.username, "roleId": u.roleId,
+    return {"user": {"id": u.id, "username": u.username, "roleId": u.roleId,
             "region": u.region, "role": {"id": r.id if r else u.roleId,
             "roleName": r.roleName if r else "", "roleType": r.roleType if r else 3}},
             "menus": get_user_menus(db, u.roleId), "keys": sorted(get_role_permission_keys(db, u.roleId))}
 
 @app.post("/api/auth/login")
-def login(b: dict, db: Session = Depends(get_db)):
+def login(b: dict, response: Response, db: Session = Depends(get_db)):
     u = db.query(models.User).filter(models.User.username == b.get("username")).first()
     if not u:
         raise HTTPException(400, "user not found")
@@ -60,8 +80,14 @@ def login(b: dict, db: Session = Depends(get_db)):
     if not ok:
         raise HTTPException(400, "bad password")
     d = me_data(db, u)
-    d["token"] = mk_token(u)
+    # 凭证只通过 HttpOnly Cookie 下发，不再放进响应体，避免前端又落到 localStorage
+    set_auth_cookie(response, mk_token(u))
     return d
+
+@app.post("/api/auth/logout")
+def logout(response: Response):
+    clear_auth_cookie(response)
+    return {"ok": True}
 
 @app.get("/api/auth/me")
 def me(db: Session = Depends(get_db), u=Depends(cur_user)):
@@ -147,8 +173,8 @@ def list_news(auditState: int = None, publishState: int = None, author: str = No
 @app.post("/api/news")
 def create_news(b: dict, db: Session = Depends(get_db), u=Depends(cur_user)):
     nid, now = str(uuid.uuid4()), int(time.time() * 1000)
-    db.add(models.News(id=nid, title=b.get("title", ""), author=u.username, region=u.region,
-                       roleId=u.roleId, content=b.get("content", ""), categoryId=b.get("categoryId", ""),
+    db.add(models.News(id=nid, title=sanitize_text(b.get("title", "")), author=u.username, region=u.region,
+                       roleId=u.roleId, content=sanitize_html(b.get("content", "")), categoryId=b.get("categoryId", ""),
                        auditState=b.get("auditState", 0), publishState=b.get("publishState", 0),
                        createTime=now, publishTime=b.get("publishTime"), star=0, view=0))
     db.commit()
@@ -166,7 +192,13 @@ def patch_news(nid: str, b: dict, db: Session = Depends(get_db), u=Depends(cur_u
     if rt == 2 and n.region != u.region and n.author != u.username:
         raise HTTPException(403, "no")
     for k in ["title", "content", "categoryId", "auditState", "publishState", "publishTime", "star", "view"]:
-        if k in b:
+        if k not in b:
+            continue
+        if k == "title":
+            n.title = sanitize_text(b[k])
+        elif k == "content":
+            n.content = sanitize_html(b[k])
+        else:
             setattr(n, k, b[k])
     db.commit()
     return {"ok": True}

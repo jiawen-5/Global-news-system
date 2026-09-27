@@ -46,7 +46,7 @@ const TopHeader = (props) => {
     },
     {
       label: (
-        <div onClick={()=>{ logout(); navigate('/login') }}>
+        <div onClick={async () => { await logout(); navigate('/login') }}>
           退出
         </div>
       ),
