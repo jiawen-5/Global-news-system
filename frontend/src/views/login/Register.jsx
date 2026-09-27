@@ -116,12 +116,14 @@ export default function Register() {
         roleId: "3" // 区域编辑
       });
       
-      if (res.data && res.data.message === '注册成功') {
+      if (res.data && (res.data.ok || res.data.message === '注册成功')) {
         message.success('注册成功！请登录');
         // 延迟跳转到登录页
         setTimeout(() => {
           navigate('/login');
         }, 1500);
+      } else {
+        message.error('注册失败，请重试');
       }
     } catch (error) {
       console.error('注册失败:', error);
@@ -196,8 +198,9 @@ export default function Register() {
             </Button>
           </Form.Item>
           <Form.Item>
-            <Button 
-              type="link" 
+            <Button
+              type="link"
+              htmlType="button"
               onClick={() => navigate('/login')}
               style={{width:'500px', textAlign:'center'}}
             >

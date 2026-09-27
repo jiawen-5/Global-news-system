@@ -172,14 +172,6 @@ export default function NewsUpdate() {
                 ))}
               </Select>
             </Form.Item>
-
-            <Form.Item
-              label="新闻概览"
-              name="summary"
-              rules={[{ required: true, message: 'Please input your news summary !' }]}
-            >
-              <Input />
-            </Form.Item>
           </Form>
         </div>
 

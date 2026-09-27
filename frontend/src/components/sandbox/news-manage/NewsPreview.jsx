@@ -14,6 +14,7 @@ export default function NewsPreview() {
 
   const auditList = ['未审核','审核中','已通过','未通过']
   const publishList = ['未发布','待发布','已上线','已下线']
+  const categoryList = ['','时事新闻','环球经济','科学科技','军事世界','世界体育','生活理财']
   const colorList = ['black','orange','green','red']
 
   useEffect(()=>{
@@ -71,7 +72,7 @@ export default function NewsPreview() {
     {
       key: '10',
       label: '新闻类型',
-      children: <span>{newsInfo.category?.title || newsInfo.categoryId || '-'}</span>,
+      children: <span>{categoryList[newsInfo.categoryId]}</span>,
     },
     {
       key: '2',
@@ -107,11 +108,6 @@ export default function NewsPreview() {
       key: '8',
       label: '点赞数量',
       children: <span>{newsInfo.star}</span>,
-    },
-    {
-      key: '9',
-      label: '评论数量',
-      children: 0,
     },
   ];
 

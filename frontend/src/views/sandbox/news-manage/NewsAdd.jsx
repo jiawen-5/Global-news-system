@@ -6,7 +6,6 @@ import request from '@/util/request.js'
 import NewsEditor from '../../../components/sandbox/news-manage/NewsEditor'
 import { useTheme } from '../../../context/ThemeContext';
 import '../../../components/sandbox/news-manage/NewsPreview.css';
-import { color } from 'echarts';
 import { checkLogin, getUser } from '@/util/checkLogin';
 import { showLoginModal } from '@/components/common/LoginModal';
 import { useLocation } from 'react-router-dom';

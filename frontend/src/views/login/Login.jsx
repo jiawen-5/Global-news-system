@@ -182,8 +182,9 @@ export default function Login() {
             </Button>
           </Form.Item>
           <Form.Item>
-            <Button 
-              type="link" 
+            <Button
+              type="link"
+              htmlType="button"
               onClick={() => navigate('/register')}
               style={{width:'500px', textAlign:'center'}}
             >

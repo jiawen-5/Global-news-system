@@ -16,6 +16,13 @@ const UserForm = (props) => {
     setIsDisabled(!!props.isUpdateDisabled); // 强制转为布尔值，避免undefined
   }, [props.isUpdateDisabled]);
 
+  // 区域管理员新增用户时，区域默认填自己所在区域（避免为空提交失败）
+  useEffect(() => {
+    if (!props.isUpdate && String(roleId) !== '1' && region && formInstance) {
+      formInstance.setFieldsValue({ region });
+    }
+  }, [props.isUpdate, roleId, region, formInstance]);
+
 
   // 角色选择联动：选择超级管理员时禁用区域（兼容类型和上下文问题）
   const handleRoleChange = (value) => {
@@ -34,19 +41,21 @@ const UserForm = (props) => {
 
   const checkRegionDisabled = (item) => {
     if(props.isUpdate){
-      if(roleId === '1'){
+      if(String(roleId) === '1'){
         console.log('item.value:', item.value, 'region:', region)
         console.log(item.value !== region);
         return false
       }else{
-        
+
         return item.value !== region
       }
     }else{
-      if(roleId === '1'){
+      if(String(roleId) === '1'){
         return false
       }else{
-        return  true       
+        // 区域管理员新增用户：只允许选择自己所在区域，其他区域禁用
+        // （之前这里直接 return true，把所有选项都禁掉了，导致区域为空无法提交）
+        return item.value !== region
       }
     }    
   }
@@ -62,18 +71,18 @@ const UserForm = (props) => {
 
   const checkRoleDisabled = (item) => {
     if(props.isUpdate){
-      if(roleId === '1'){
+      if(String(roleId) === '1'){
         return false
       }else{
         return true
       }
     }else{
-      if(roleId === '1'){
+      if(String(roleId) === '1'){
         return false
       }else{
-        return item.value !== '3'    
+        return String(item.value) !== '3'
       }
-    }    
+    }
   }
 
   const getRoleOptions = () => {
@@ -94,13 +103,16 @@ const UserForm = (props) => {
       >
         <Input />
       </Form.Item>
-      <Form.Item 
-        name="password" 
-        label="密码"
-        rules={[{ required: true, message: 'Please input the title of collection!' }]}
-      >
-        <Input type="password" />
-      </Form.Item>
+      {/* 更新用户时不展示密码项，只有新增用户时展示 */}
+      {!props.isUpdate && (
+        <Form.Item
+          name="password"
+          label="密码"
+          rules={[{ required: true, message: 'Please input the title of collection!' }]}
+        >
+          <Input type="password" />
+        </Form.Item>
+      )}
       <Form.Item 
         name="region" 
         label="区域"

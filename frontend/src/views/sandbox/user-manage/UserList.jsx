@@ -145,7 +145,7 @@ export default function UserList() {
     console.log('当前编辑项：', item);
     setCurrent(item);
     setUpdate(true);
-    setIsUpdateDisabled(item.roleId === '1');
+    setIsUpdateDisabled(String(item.roleId) === '1');
   }
 
   const fetchUserList = () => {
@@ -180,16 +180,23 @@ export default function UserList() {
   }
 
   const updateFormOK = ()=>{
-    if (!updateForm.current || !current) return; 
+    if (!updateForm.current || !current) return;
     updateForm.current.validateFields().then(value => {
-      // console.log(value)
+      // 更新接口不下发密码（表单里已隐藏），并去掉 id，避免后果端校验失败
+      const { password, id, ...rest } = value;
+      const payload = { ...rest };
+      // 兼容后端对 roleId 类型的要求：保持与原数据类型一致
+      if (payload.roleId !== undefined && current.roleId !== undefined) {
+        const wantNumber = typeof current.roleId === 'number';
+        payload.roleId = wantNumber ? Number(payload.roleId) : String(payload.roleId);
+      }
       setUpdate(false)
       setIsUpdateDisabled(!isUpdateDisabled)
 
-      request.patch(`/users/${current.id}`,value).then(res => {
+      request.patch(`/users/${current.id}`,payload).then(res => {
         console.log('用户更新成功');
         // 关键：更新成功后重新请求列表，确保数据最新
-        fetchUserList(); 
+        fetchUserList();
       })
       .catch(err => {
         console.error('用户更新失败：', err);
@@ -236,13 +243,6 @@ export default function UserList() {
     {
       title: '用户名',
       dataIndex: 'username',
-    },
-    {
-      title: '用户状态',
-      dataIndex: 'roleState',
-      render:(roleState, item)=>{
-        return <Switch checked={roleState} disabled={item.default} onChange={()=>handleChange(item)}></Switch>
-      }
     },
     {
       title: '操作',
@@ -336,10 +336,11 @@ export default function UserList() {
         afterOpenChange={(open) => {
           if (open && current && updateForm.current) {
             console.log('表单实例（弹窗打开后）：', updateForm.current);
-            // 此时表单已渲染，可安全设置值
-            updateForm.current.setFieldsValue(current);
+            // 此时表单已渲染，可安全设置值（剔除 password：更新表单已隐藏该项）
+            const { password, ...rest } = current;
+            updateForm.current.setFieldsValue(rest);
             // 再次确认禁用状态（冗余保障）
-            setIsUpdateDisabled(current.roleId === '1');
+            setIsUpdateDisabled(String(current.roleId) === '1');
           }
         }}
       >

@@ -98,8 +98,9 @@ export default function Audit() {
     {
       title: '新闻分类',
       dataIndex: 'categoryId',
-      render:(value, record)=>{
-        return <div>{record.category?.title || value}</div>
+      render:(value) => {
+        const categoryList = ['时事新闻','环球经济','科学科技','军事世界','世界体育','生活理财']
+        return <div>{categoryList[value] || '-'}</div>
       }
     },
     {

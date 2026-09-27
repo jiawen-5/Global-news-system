@@ -142,13 +142,13 @@ export default function Home() {
   return (
     <ThemeProvider>
     <div style={isDarkMode?appStyles.card: {}}>
-      <Row gutter={16}>
-        <Col span={8}>
+      <Row gutter={16} align="stretch">
+        <Col span={8} style={{ display: 'flex' }}>
           <Card title={
             <div style={isDarkMode ? { color: '#fff' } : {}}>
               用户点赞最多
             </div>
-          } variant="outlined" style={isDarkMode?appStyles.card: {}}>
+          } variant="outlined" style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', ...(isDarkMode ? appStyles.card : {}) }}>
             <List
               style={isDarkMode?appStyles.card: {}}
               size="small"
@@ -160,12 +160,12 @@ export default function Home() {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col span={8} style={{ display: 'flex' }}>
           <Card title={
             <div style={isDarkMode ? { color: '#fff' } : {}}>
               用户浏览最多
             </div>
-          } variant="outlined" style={isDarkMode?appStyles.card: {}}>
+          } variant="outlined" style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', ...(isDarkMode ? appStyles.card : {}) }}>
             <List
               style={isDarkMode?appStyles.card: {}}
               size="small"
@@ -177,13 +177,14 @@ export default function Home() {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col span={8} style={{ display: 'flex' }}>
           <Card
-            style={isDarkMode?appStyles.card: {}}
+            style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', ...(isDarkMode ? appStyles.card : {}) }}
             cover={
               <img
                 alt="example"
                 src="https://gw.alipayobjects.com/zos/rmsportal/JiqGstEfoWAOHiTxclqi.png"
+                style={{ height: 180, objectFit: 'cover' }}
               />
             }
             actions={[

@@ -100,10 +100,13 @@ def list_news(auditState: int = None, publishState: int = None, author: str = No
     query = db.query(models.News)
     r = db.query(models.Role).filter(models.Role.id == u.roleId).first()
     rt = r.roleType if r else 3
-    if rt == 3:
-        query = query.filter(models.News.author == u.username)
-    elif rt == 2:
-        query = query.filter(or_(models.News.region == u.region, models.News.author == u.username))
+    # 已上线新闻（publishState=2）是公开榜单/图表数据，所有人可见，不做角色隔离；
+    # 草稿/待审核等仍按角色隔离：编辑只看自己，区域管理员看本区域+自己
+    if publishState != 2:
+        if rt == 3:
+            query = query.filter(models.News.author == u.username)
+        elif rt == 2:
+            query = query.filter(or_(models.News.region == u.region, models.News.author == u.username))
     if auditState is not None:
         query = query.filter(models.News.auditState == auditState)
     if publishState is not None:
@@ -226,6 +229,38 @@ def list_users(db: Session = Depends(get_db), u=Depends(need("/user-manage/list"
     return [{"id": x.id, "username": x.username, "roleId": x.roleId, "region": x.region}
             for x in db.query(models.User).all()]
 
+@app.patch("/api/users/{uid}")
+def patch_user(uid: str, b: dict, db: Session = Depends(get_db), u=Depends(need("/user-manage/list"))):
+    from fastapi import HTTPException as HE
+    t = db.query(models.User).filter(models.User.id == uid).first()
+    if not t:
+        raise HE(404, "user not found")
+    if "username" in b and b["username"] and b["username"] != t.username:
+        if db.query(models.User).filter(models.User.username == b["username"]).first():
+            raise HE(400, "username exists")
+        t.username = b["username"]
+    if "region" in b:
+        t.region = b["region"]
+    if "roleId" in b:
+        t.roleId = b["roleId"]
+    if "password" in b and b["password"]:
+        t.password = bcrypt.hashpw(b["password"].encode(), bcrypt.gensalt()).decode()
+    # roleState / default 仅前端展示用，后端暂无该字段，直接忽略，保证 200
+    db.commit()
+    return {"ok": True, "id": t.id}
+
+@app.delete("/api/users/{uid}")
+def del_user(uid: str, db: Session = Depends(get_db), u=Depends(need("/user-manage/list"))):
+    from fastapi import HTTPException as HE
+    if uid == u.id:
+        raise HE(400, "cannot delete yourself")
+    t = db.query(models.User).filter(models.User.id == uid).first()
+    if not t:
+        raise HE(404, "user not found")
+    db.delete(t)
+    db.commit()
+    return {"ok": True}
+
 @app.get("/api/categories")
 def list_cat(db: Session = Depends(get_db), u=Depends(cur_user)):
     return [{"id": x.id, "title": x.title, "value": x.value} for x in db.query(models.Category).all()]
@@ -251,7 +286,8 @@ def patch_cat(cid: str, b: dict, db: Session = Depends(get_db), u=Depends(cur_us
     return {"ok": True}
 
 @app.get("/api/regions")
-def list_reg(db: Session = Depends(get_db), u=Depends(cur_user)):
+def list_reg(db: Session = Depends(get_db)):
+    # 注册页未登录也要拉区域列表，公开接口
     return [{"id": x.id, "title": x.title, "value": x.value} for x in db.query(models.Region).all()]
 
 @app.get("/health")
